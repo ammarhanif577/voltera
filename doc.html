@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voltera Trade - Global B2B Technical Supply</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Custom Industrial Aesthetic */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0d1c; /* Deep Dark Blue */
+            color: #e2e8f0;
+        }
+        .nav-link {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-link.active {
+            border-bottom: 3px solid #06b6d4; /* Electric Cyan */
+            color: #fff;
+        }
+        .card {
+            background-color: #1c1c30; /* Slightly lighter deep background */
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.2); /* Cyan glow on hover */
+        }
+        .btn-primary {
+            background-color: #06b6d4; /* Electric Cyan */
+            color: #1c1c30;
+            transition: background-color 0.2s;
+            font-weight: 700;
+        }
+        .btn-primary:hover {
+            background-color: #0d9488; /* Slightly darker cyan */
+        }
+        .logo-text {
+            text-shadow: 0 0 5px #06b6d4;
+        }
+        .form-input {
+            background-color: #252540;
+            border: 1px solid #3d3d61;
+            color: white;
+        }
+        .form-input:focus {
+            border-color: #06b6d4;
+            box-shadow: 0 0 0 1px #06b6d4;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header and Navigation -->
+    <header class="bg-[#12122b] shadow-lg sticky top-0 z-10 border-b border-cyan-700/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center">
+                    <span class="text-3xl font-extrabold text-cyan-400 logo-text">Voltera</span>
+                    <span class="text-3xl font-light text-white ml-1">Trade</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="nav-links" class="flex space-x-6">
+                        <a onclick="navigate('home')" class="nav-link active text-gray-300 hover:text-white pb-2">Home</a>
+                        <a onclick="navigate('catalog')" class="nav-link text-gray-300 hover:text-white pb-2">Product Catalog</a>
+                        <a onclick="navigate('rfq-form')" class="nav-link text-gray-300 hover:text-white pb-2 flex items-center">
+                            Request Quote
+                            <span id="rfq-count" class="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-600 text-xs font-bold text-white">0</span>
+                        </a>
+                        <a onclick="navigate('rfq-status')" class="nav-link text-gray-300 hover:text-white pb-2">RFQ Status</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow">
+        <div id="page-content">
+            <!-- Content will be rendered here -->
+        </div>
+    </main>
+
+    <!-- Footer / Status Bar -->
+    <footer class="bg-[#12122b] text-gray-400 p-4 mt-auto text-sm border-t border-cyan-700/50">
+        <div class="max-w-7xl mx-auto flex justify-between">
+            <div>
+                <span id="auth-status">Mode: Pure Frontend Simulation</span>
+            </div>
+            <div>
+                &copy; 2025 Voltera Trade | B2B Technical Supplies Pakistan
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal Structure -->
+    <div id="app-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden justify-center items-center">
+        <div class="bg-[#1c1c30] rounded-xl shadow-2xl p-6 w-11/12 max-w-lg border border-cyan-700/50">
+            <div class="flex justify-between items-start">
+                <h3 id="modal-title" class="text-xl font-bold text-cyan-400"></h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="modal-body" class="mt-4 text-gray-300"></div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeModal()" class="btn-primary px-4 py-2 rounded-lg font-semibold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE AND DATA ---
+        let currentPage = 'home';
+        let quoteCart = [];
+
+        const products = [
+            // C1: Electrical Conductors & Cables
+            { id: 'C1-001', category: 'C1', brands: ['Pakistan Cables', 'Fast', 'Million cables'], name: 'High Voltage Power Cables', description: 'Certified 33kV to 150kV range, Copper/Aluminum, IEC Standard.', price_hint: 'Custom Quote', specs: '33kV - 150kV, XLPE' },
+            { id: 'C1-002', category: 'C1', brands: ['Pakistan Cables', 'Fast', 'Classic cables'], name: 'Low Voltage Industrial Wiring', description: 'Single/Multi-Core, 750V PVC/XLPE. For general industrial power and distribution.', price_hint: 'Custom Quote', specs: '1.5mm² - 300mm², LV' },
+            { id: 'C1-003', category: 'C1', brands: ['Fast', 'Pakistan Cables'], name: 'Overhead Transmission Conductors', description: 'ACSR and AAC Conductors for long-distance overhead transmission lines.', price_hint: 'Custom Quote', specs: 'ACSR, AAC, High Tensile' },
+            { id: 'C1-004', category: 'C1', brands: ['Fast', 'Million cables', 'Classic cables'], name: 'Instrumentation & Control Cables', description: 'Shielded and unshielded pairs/triads for industrial automation and signaling.', price_hint: 'Custom Quote', specs: 'Shielded, PE/PVC Insulated' },
+            // C2: Protection & Switching Gear
+            { id: 'C2-001', category: 'C2', brands: ['Schneider', 'ABB', 'Tersaki'], name: 'Industrial Circuit Breakers (MCCB/ACB)', description: 'Molded Case & Air Circuit Breakers, 100A to 4000A, 25kA-50kA. Global industry standard.', price_hint: 'Custom Quote', specs: '100A-4000A, 25kA-50kA' },
+            { id: 'C2-002', category: 'C2', brands: ['Schneider', 'Chint', 'ABB', 'Togami'], name: 'Miniature Circuit Breakers (MCB)', description: 'DIN rail mounted protection for general industrial and commercial use (6A-63A).', price_hint: 'Custom Quote', specs: '6A-63A, Type C/D' },
+            { id: 'C2-003', category: 'C2', brands: ['Schneider', 'Togami', 'Chint', 'ABB'], name: 'Industrial Contactors & Overloads', description: 'Heavy-duty switching, relays, and thermal overload protection.', price_hint: 'Custom Quote', specs: 'Contactors, Relays, IEC' },
+            { id: 'C2-004', category: 'C2', brands: ['Schneider', 'ABB', 'Chint'], name: 'HRC Fuses & Fuse Holders', description: 'High-rupturing capacity (HRC) fuses and bases for critical panel protection.', price_hint: 'Custom Quote', specs: 'HRC, Industrial Grade' },
+            // C3: Illumination & Ventilation
+            { id: 'C3-001', category: 'C3', brands: ['Phillips', 'Osram'], name: 'Industrial LED High Bay Lighting', description: 'Energy-efficient, high-lumen fixtures for large warehouses/factories, IP65 rated.', price_hint: 'Custom Quote', specs: '100W-500W, IP65' },
+            { id: 'C3-002', category: 'C3', brands: ['Crown explosion proof lights', 'Wolf explosion proof', 'Stahl'], name: 'Certified Explosion-Proof Lighting (Ex-Proof)', description: 'Certified Ex-Proof Luminaires (Zone 1/21) for Oil & Gas and hazardous sites.', price_hint: 'Custom Quote', specs: 'Ex-Proof, Zone 1/21' },
+            { id: 'C3-003', category: 'C3', brands: ['Gfc fans', 'Aqua electrical', 'Phillips'], name: 'Heavy-Duty Industrial Fans', description: 'High-capacity exhaust and ventilation fans for hash environments.', price_hint: 'Custom Quote', specs: 'GFC, Industrial Grade' },
+            { id: 'C3-004', category: 'C3', brands: ['Phillips', 'Osram'], name: 'Outdoor Street & Flood Lighting', description: 'High-efficiency LED fixtures for municipal and site illumination.', price_hint: 'Custom Quote', specs: 'Outdoor LED, High Mast' },
+            // C4: Power & Storage (Batteries & UPS)
+            { id: 'C4-001', category: 'C4', brands: ['Exide battery', 'Osaka'], name: 'Industrial VRLA Batteries', description: 'Valve-Regulated Lead-Acid batteries for UPS and critical backup systems (80Ah-200Ah).', price_hint: 'Custom Quote', specs: '80Ah - 200Ah, VRLA' },
+            { id: 'C4-002', category: 'C4', brands: ['Exide battery', 'Osaka'], name: 'Industrial Battery Systems (Ni-Cd)', description: 'Long-life Nickel-Cadmium battery banks for extreme temperature applications.', price_hint: 'Custom Quote', specs: 'Ni-Cd, High Durability' },
+            { id: 'C4-003', category: 'C4', brands: ['ABB', 'Schneider'], name: 'Industrial UPS Systems', description: 'Uninterruptible Power Supply systems for vital control room and communication equipment.', price_hint: 'Custom Quote', specs: 'Online, Double-Conversion' },
+            { id: 'C4-004', category: 'C4', brands: ['Osaka', 'Exide battery'], name: 'Solar/Deep Cycle Batteries', description: 'Batteries optimized for solar energy storage and deep discharge applications.', price_hint: 'Custom Quote', specs: 'Deep Cycle, Solar Optimized' },
+            // C5: Wiring Accessories & MRO
+            { id: 'C5-001', category: 'C5', brands: ['Aqua electrical', 'Orange Electric (Sim)', 'Schneider'], name: 'Industrial Plugs and Sockets', description: 'Heavy-duty plugs, sockets, and appliance connectors (IP44/IP65 rated).', price_hint: 'Custom Quote', specs: 'IP44/IP65, 3/5 Pin' },
+            { id: 'C5-002', category: 'C5', brands: ['Wolf explosion proof', 'Stahl', 'ABB'], name: 'Ex-Proof Junction Boxes & Enclosures', description: 'Certified junction boxes, control stations, and enclosures for hazardous areas.', price_hint: 'Custom Quote', specs: 'Ex-Fittings, Zone 2' },
+            { id: 'C5-003', category: 'C5', brands: ['ABB', 'Schneider', 'Togami'], name: 'DIN Rail Terminal Blocks', description: 'High-Quality terminal blocks and industrial connectors for control panels.', price_hint: 'Custom Quote', specs: 'DIN Rail, Insulated' },
+            { id: 'C5-004', category: 'C5', brands: ['Tersaki', 'Togami', 'Schneider'], name: 'Power Quality Meters & Instruments', description: 'Advanced metering, voltmeters, and monitoring devices for industrial panels.', price_hint: 'Custom Quote', specs: 'Measuring, Monitoring' },
+            { id: 'C5-005', category: 'C5', brands: ['Phillips', '3M (Sim)'], name: 'Industrial Insulating Tapes & Adhesives', description: 'High-grade PVC, Rubber, and specialized splicing tapes for cable termination.', price_hint: 'Custom Quote', specs: 'PVC, Rubber, High Temp' },
+            { id: 'C5-006', category: 'C5', brands: ['ABB', 'Schneider', 'Chint'], name: 'Surge Protection Devices (SPD)', description: 'Protection devices for sensitive industrial electronics and control systems.', price_hint: 'Custom Quote', specs: 'Type 1/2 SPD' },
+            { id: 'C5-007', category: 'C5', brands: ['Stahl', 'Wolf explosion proof'], name: 'Safety Control Stations', description: 'Emergency Stop buttons, control panels, and signaling devices for hazardous areas.', price_hint: 'Custom Quote', specs: 'E-Stop, Hazardous Area' }
+        ];
+
+        const categories = {
+            'C1': 'C1: Cables & Conductors',
+            'C2': 'C2: Protection & Switching Gear',
+            'C3': 'C3: Illumination & Ventilation',
+            'C4': 'C4: Power & Storage (Batteries & UPS)',
+            'C5': 'C5: Wiring Accessories & MRO'
+        };
+
+        // Collects all unique brands for the filter dropdown
+        const allBrands = Array.from(new Set(
+            products.flatMap(p => p.brands)
+        )).sort();
+        
+        // --- Utility Functions ---
+
+        function showModal(title, body) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = body;
+            document.getElementById('app-modal').classList.remove('hidden');
+            document.getElementById('app-modal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('app-modal').classList.remove('flex');
+            document.getElementById('app-modal').classList.add('hidden');
+        }
+
+        function updateQuoteCount() {
+            const countElement = document.getElementById('rfq-count');
+            if (countElement) {
+                countElement.textContent = quoteCart.length;
+            }
+        }
+
+        function clearQuoteCart() {
+            quoteCart = [];
+            updateQuoteCount();
+        }
+
+        // --- RFQ Cart Management ---
+
+        function addToQuote(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            const existingItem = quoteCart.find(item => item.id === productId);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                quoteCart.push({ id: productId, name: product.name, quantity: 1, specs: product.specs });
+            }
+
+            updateQuoteCount();
+            showModal('Item Added to Quote', `**${product.name}** added to your Request for Quote. Current quantity: ${existingItem ? existingItem.quantity : 1}. Navigate to "Request Quote" to finalize your submission.`);
+        }
+
+        function removeFromQuote(productId) {
+            quoteCart = quoteCart.filter(item => item.id !== productId);
+            updateQuoteCount();
+            renderPage('rfq-form');
+        }
+
+        function updateQuantity(productId, event) {
+            const quantity = parseInt(event.target.value);
+            const item = quoteCart.find(item => item.id === productId);
+            if (item && quantity >= 1) {
+                item.quantity = quantity;
+            } else if (item && quantity < 1) {
+                removeFromQuote(productId);
+            }
+            renderPage('rfq-form');
+        }
+
+        function handleQuoteSubmission(event) {
+            event.preventDefault();
+
+            if (quoteCart.length === 0) {
+                showModal('Error', 'Your Quote Cart is empty. Please add items to submit an RFQ.');
+                return;
+            }
+
+            const form = event.target;
+            const quoteData = {
+                companyName: form.companyName.value,
+                contactName: form.contactName.value,
+                contactEmail: form.contactEmail.value,
+                deliveryDate: form.deliveryDate.value,
+                specialInstructions: form.specialInstructions.value,
+                targetBudget: form.targetBudget.value,
+                items: quoteCart.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    specs: item.specs
+                }))
+            };
+
+            // --- FRONTEND SIMULATION ONLY ---
+            const quoteId = `VLT-SIM-${Date.now().toString().slice(-6)}`;
+            console.log("RFQ Data Captured (Frontend Simulation):", quoteData);
+            showModal('RFQ Submission Successful (Simulation)', `
+                <p>Your Request for Quotation has been successfully captured by **Voltera Trade**.</p>
+                <p class="mt-2">Our team will now process the bulk pricing for your request (Ref: ${quoteId}) and send the formal PDF quote to ${quoteData.contactEmail}.</p>
+                <p class="mt-3 text-cyan-400 font-semibold">NOTE: This data is not stored permanently. Proceed to the next step of defining the PDF quote structure!</p>
+            `);
+            clearQuoteCart();
+            navigate('home');
+            // --- END SIMULATION ---
+        }
+
+
+        // --- Page Rendering ---
+
+        function navigate(page) {
+            currentPage = page;
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[onclick="navigate('${page}')"]`).classList.add('active');
+            renderPage(page);
+        }
+
+        function renderPage(page) {
+            const content = document.getElementById('page-content');
+            updateQuoteCount(); 
+
+            switch (page) {
+                case 'home':
+                    content.innerHTML = renderHome();
+                    break;
+                case 'catalog':
+                    content.innerHTML = renderCatalog(); 
+                    applyFilters(); 
+                    lucide.createIcons();
+                    break;
+                case 'rfq-form':
+                    content.innerHTML = renderRFQForm();
+                    lucide.createIcons();
+                    break;
+                case 'rfq-status':
+                    content.innerHTML = renderRFQStatus();
+                    lucide.createIcons();
+                    break;
+                default:
+                    content.innerHTML = renderHome();
+            }
+        }
+
+        // --- Content Templates ---
+
+        function renderHome() {
+            const clientList = ['SSGC', 'OGDCL', 'PPL'];
+            const clientTiles = clientList.map(client => `
+                <div class="p-4 bg-[#252540] rounded-lg shadow-xl h-24 flex items-center justify-center border border-gray-700">
+                    <span class="text-xl font-bold text-gray-400">${client}</span>
+                </div>
+            `).join('');
+
+            const brandList = [
+                'ABB', 'Schneider', 'Phillips', 'Exide battery', 'Pakistan Cables', 'Fast',
+                'Classic cables', 'Chint', 'Stahl', 'Osram', 'Togami', 'Tersaki', 
+                'Osaka', 'Aqua electrical', 'Wolf explosion proof', 'Million cables', 'Gfc fans', 'Crown explosion proof lights'
+            ];
+
+            const brandTiles = brandList.map(brand => `
+                <div class="p-3 bg-[#252540] rounded-lg shadow-xl h-20 flex items-center justify-center border border-cyan-700/30">
+                    <span class="text-sm font-bold text-gray-300">${brand}</span>
+                </div>
+            `).join('');
+
+            return `
+                <section class="text-center py-16 bg-[#1c1c30] rounded-xl shadow-2xl border border-cyan-700/50">
+                    <h1 class="text-5xl font-extrabold text-white">Voltera Trade: Global Scale, Industrial Authority.</h1>
+                    <p class="mt-4 text-xl text-cyan-400">Your certified B2B partner for critical electrical and technical supplies.</p>
+
+                    <div class="mt-10 max-w-4xl mx-auto">
+                        <p class="text-lg text-gray-300">
+                            We streamline high-volume procurement by supplying top-tier brands (ABB, Schneider, Exide) and certified products required for the nation’s most critical infrastructure.
+                        </p>
+                    </div>
+
+                    <div class="mt-12">
+                        <button onclick="navigate('catalog')" class="btn-primary px-8 py-3 text-lg rounded-xl shadow-lg transform hover:scale-105 transition duration-300">
+                            Browse Catalog & Initiate RFQ
+                        </button>
+                    </div>
+                </section>
+
+                <section class="py-16">
+                    <h2 class="text-3xl font-bold text-center text-white mb-8">Serving National Infrastructure Core</h2>
+                    <!-- Client Showcase -->
+                    <div class="grid grid-cols-3 gap-6 items-center justify-center max-w-3xl mx-auto mb-12">
+                        ${clientTiles}
+                    </div>
+
+                    <h2 class="text-3xl font-bold text-center text-white mt-12 mb-8">Supplier of Global Industrial Standards</h2>
+                    <!-- Brand Showcase -->
+                    <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-6 items-center justify-center max-w-6xl mx-auto">
+                        ${brandTiles}
+                    </div>
+                </section>
+            `;
+        }
+
+        function renderCatalog() {
+            const categoryOptions = Object.entries(categories).map(([key, value]) =>
+                `<option value="${key}">${value}</option>`
+            ).join('');
+            
+            const brandOptions = allBrands.map(brand => 
+                `<option value="${brand}">${brand}</option>`
+            ).join('');
+
+            return `
+                <h2 class="text-4xl font-bold text-white mb-8">Voltera Trade Industrial Product Catalog</h2>
+
+                <div class="bg-[#1c1c30] p-6 rounded-xl shadow-lg mb-8 flex flex-col md:flex-row gap-6 border border-cyan-700/50">
+                    <!-- Filters -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full md:w-1/2">
+                        <label for="category-filter" class="text-gray-300 font-semibold whitespace-nowrap">Filter by Category:</label>
+                        <select id="category-filter" onchange="applyFilters()" class="form-input text-white rounded-lg p-2 w-full">
+                            <option value="all">All Categories</option>
+                            ${categoryOptions}
+                        </select>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full md:w-1/2">
+                        <label for="brand-filter" class="text-gray-300 font-semibold whitespace-nowrap">Filter by Brand:</label>
+                        <select id="brand-filter" onchange="applyFilters()" class="form-input text-white rounded-lg p-2 w-full">
+                            <option value="all">All Brands</option>
+                            ${brandOptions}
+                        </select>
+                    </div>
+                </div>
+
+                <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Products rendered by applyFilters() -->
+                </div>
+            `;
+        }
+
+        function applyFilters() {
+            const categoryId = document.getElementById('category-filter').value;
+            const brandName = document.getElementById('brand-filter').value;
+            const listElement = document.getElementById('product-list');
+
+            const filteredProducts = products.filter(p => {
+                const categoryMatch = categoryId === 'all' || p.category === categoryId;
+                const brandMatch = brandName === 'all' || p.brands.includes(brandName);
+                return categoryMatch && brandMatch;
+            });
+
+            listElement.innerHTML = filteredProducts.map(p => `
+                <div class="card p-6 rounded-xl flex flex-col justify-between border border-gray-700/50">
+                    <div>
+                        <div class="text-lg font-bold text-white">${p.name}</div>
+                        <p class="text-sm text-gray-400 mt-1">${categories[p.category]}</p>
+                        <p class="mt-3 text-cyan-400 font-semibold text-sm">Brands: ${p.brands.slice(0, 2).join(', ')} & more</p>
+                        <p class="mt-2 text-gray-300 text-sm">${p.description}</p>
+                        <ul class="mt-2 text-xs text-gray-500 list-disc list-inside">
+                            <li>Technical Range: ${p.specs}</li>
+                        </ul>
+                    </div>
+                    <div class="mt-6 flex justify-between items-center">
+                        <span class="text-xl font-extrabold text-white">${p.price_hint}</span>
+                        <button onclick="addToQuote('${p.id}')" class="btn-primary px-4 py-2 text-sm rounded-lg flex items-center space-x-2 shadow-lg">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            <span>Add to Quote</span>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+
+        function renderRFQForm() {
+            const cartList = quoteCart.length > 0 ? quoteCart.map(item => `
+                <li class="flex justify-between items-center py-3 border-b border-gray-700">
+                    <div class="flex-1">
+                        <span class="font-semibold text-white">${item.name}</span>
+                        <p class="text-xs text-gray-400">Specs: ${item.specs}</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm text-gray-400">Qty:</label>
+                        <input type="number" value="${item.quantity}" onchange="updateQuantity('${item.id}', event)" min="1" class="w-20 form-input p-1 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                        <button onclick="removeFromQuote('${item.id}')" class="text-red-500 hover:text-red-400 p-1 rounded-full">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </li>
+            `).join('') : '<p class="text-gray-400 italic py-4">Your quote cart is empty. Add items from the Product Catalog to proceed.</p>';
+
+            return `
+                <h2 class="text-4xl font-bold text-white mb-8">Bulk Request for Quotation (RFQ)</h2>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Quote Cart Sidebar -->
+                    <div class="lg:col-span-1 bg-[#1c1c30] p-6 rounded-xl shadow-lg h-fit sticky top-24 border border-cyan-700/50">
+                        <h3 class="text-2xl font-bold text-cyan-400 mb-4 flex items-center space-x-2">
+                            <i data-lucide="shopping-basket" class="w-6 h-6"></i>
+                            <span>Quote Cart (${quoteCart.length} Items)</span>
+                        </h3>
+                        <ul class="divide-y divide-gray-700">
+                            ${cartList}
+                        </ul>
+                    </div>
+
+                    <!-- RFQ Form -->
+                    <div class="lg:col-span-2 bg-[#1c1c30] p-8 rounded-xl shadow-lg border border-cyan-700/50">
+                        <h3 class="text-2xl font-bold text-white mb-6">Client & Project Details (Required for Official Quote)</h3>
+                        <form onsubmit="handleQuoteSubmission(event)">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Company Info -->
+                                <div class="space-y-4">
+                                    <label class="block">
+                                        <span class="text-gray-300">Company Name (Mandatory for B2B)</span>
+                                        <input type="text" name="companyName" required class="mt-1 block w-full rounded-md shadow-sm p-3 form-input">
+                                    </label>
+                                    <label class="block">
+                                        <span class="text-gray-300">Contact Person Name</span>
+                                        <input type="text" name="contactName" required class="mt-1 block w-full rounded-md shadow-sm p-3 form-input">
+                                    </label>
+                                    <label class="block">
+                                        <span class="text-gray-300">Contact Email</span>
+                                        <input type="email" name="contactEmail" required class="mt-1 block w-full rounded-md shadow-sm p-3 form-input">
+                                    </label>
+                                </div>
+
+                                <!-- Project Details -->
+                                <div class="space-y-4">
+                                    <label class="block">
+                                        <span class="text-gray-300">Target Delivery Date (Required for Logistics)</span>
+                                        <input type="date" name="deliveryDate" required class="mt-1 block w-full rounded-md shadow-sm p-3 form-input">
+                                    </label>
+                                    <label class="block">
+                                        <span class="text-gray-300">Target Price / Budget (Optional, PKR)</span>
+                                        <input type="text" name="targetBudget" placeholder="e.g., PKR 5,000,000" class="mt-1 block w-full rounded-md shadow-sm p-3 form-input">
+                                    </label>
+                                </div>
+                            </div>
+                            <label class="block mt-6">
+                                <span class="text-gray-300">Special Instructions / Required Certifications (Critical Details)</span>
+                                <textarea name="specialInstructions" rows="4" class="mt-1 block w-full rounded-md shadow-sm p-3 form-input" placeholder="e.g., Test Certificates (TC) mandatory for all cables; delivery to OGDCL Site A; Requires palletized export packaging."></textarea>
+                            </label>
+
+                            <button type="submit" ${quoteCart.length === 0 ? 'disabled' : ''} class="btn-primary w-full mt-8 px-6 py-3 text-lg font-semibold rounded-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                                Submit Formal Quotation Request (${quoteCart.length} Items)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRFQStatus() {
+            // Frontend Simulation: Displaying static message since the backend is disabled
+            return `
+                <h2 class="text-4xl font-bold text-white mb-8">RFQ Status & History (Frontend Simulation)</h2>
+                <p class="text-yellow-400 mb-6 font-semibold">
+                    This page is currently running in Pure Frontend Simulation mode. All submitted RFQs are logged in the console but NOT stored permanently.
+                </p>
+                <div id="rfq-history-list" class="space-y-4">
+                    <div class="p-8 bg-[#1c1c30] rounded-xl text-center shadow-lg border border-gray-700">
+                        <i data-lucide="database-off" class="w-12 h-12 mx-auto text-red-500 mb-4"></i>
+                        <p class="text-gray-300 font-semibold">Backend Offline.</p>
+                        <p class="text-gray-400 text-sm mt-1">RFQ history tracking is disabled. Integrate a database to enable this feature.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+
+        // Start the application after the DOM content is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPage(currentPage);
+            // Apply initial filter to show all products on catalog load
+            if (currentPage === 'catalog') {
+                applyFilters();
+            }
+        });
+
+        // Attach global functions to window scope for HTML onclick access
+        window.navigate = navigate;
+        window.closeModal = closeModal;
+        window.addToQuote = addToQuote;
+        window.removeFromQuote = removeFromQuote;
+        window.updateQuantity = updateQuantity;
+        window.handleQuoteSubmission = handleQuoteSubmission;
+        window.applyFilters = applyFilters;
+        
+    </script>
+</body>
+</html>
